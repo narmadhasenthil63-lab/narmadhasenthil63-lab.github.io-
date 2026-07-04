@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Timetable Generator — Sree Sakthi Engineering College</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   DESIGN TOKENS
+================================================================ */
+:root {
+  --bg: #080b14;
+  --bg-soft: #0d1120;
+  --bg-card: #111827;
+  --surface: rgba(255,255,255,0.04);
+  --surface-hover: rgba(255,255,255,0.08);
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.15);
+  --text: #e8eaf3;
+  --muted: #8b93ab;
+  --faint: #4e5673;
+  --accent: #8b6cff;
+  --cyan: #22d3ee;
+  --green: #2dd4bf;
+  --red: #ff6b8a;
+  --grad: linear-gradient(135deg,#8b6cff,#22d3ee);
+  --grad-soft: linear-gradient(135deg,rgba(139,108,255,0.15),rgba(34,211,238,0.1));
+  --font-d: "Space Grotesk",sans-serif;
+  --font-b: "Inter",sans-serif;
+  --font-m: "JetBrains Mono",monospace;
+  --ease: cubic-bezier(0.16,1,0.3,1);
+  --r: 14px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-b);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bg-card);border-radius:8px;}
+
+/* selection */
+::selection{background:rgba(139,108,255,0.35);color:#fff;}
+
+/* links */
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit;}
+input,select,textarea{font-family:inherit;color:inherit;}
+
+/* ================================================================
+   PARTICLES
+================================================================ */
+#particles{
+  position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.5;
+}
+
+/* ================================================================
+   LAYOUT
+================================================================ */
+.wrapper{
+  position:relative;z-index:1;
+  min-height:100vh;
+  display:flex;flex-direction:column;
+}
+
+/* ================================================================
+   HEADER
+================================================================ */
+.site-header{
+  background:rgba(8,11,20,0.8);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 32px;
+  height:70px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.college-brand{
+  display:flex;align-items:center;gap:14px;
+}
+.college-logo{
+  width:44px;height:44px;border-radius:10px;
+  background:var(--grad);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-d);font-weight:700;font-size:15px;color:#080b14;
+  letter-spacing:0.02em;flex-shrink:0;
+}
+.college-name{
+  font-family:var(--font-d);font-weight:700;font-size:15px;
+  letter-spacing:0.01em;line-height:1.2;
+}
+.college-name span{
+  display:block;font-size:11.5px;font-weight:400;
+  font-family:var(--font-m);color:var(--cyan);letter-spacing:0.08em;
+  margin-top:2px;
+}
+.header-badge{
+  font-family:var(--font-m);font-size:12px;
+  padding:6px 14px;border-radius:100px;
+  border:1px solid var(--border-strong);
+  color:var(--cyan);
+  display:flex;align-items:center;gap:7px;
+}
+.header-badge::before{
+  content:"";width:7px;height:7px;border-radius:50%;
+  background:var(--green);
+  animation:ping 2s ease-in-out infinite;
+}
+@keyframes ping{
+  0%,100%{box-shadow:0 0 0 0 rgba(45,212,191,0.6);}
+  50%{box-shadow:0 0 0 6px rgba(45,212,191,0);}
+}
+
+/* ================================================================
+   MAIN
+================================================================ */
+main{flex:1;padding:48px 32px 80px;max-width:1280px;margin:0 auto;width:100%;}
+
+/* PAGE TITLE */
+.page-title-row{
+  text-align:center;margin-bottom:52px;
+}
+.page-eyebrow{
+  font-family:var(--font-m);font-size:12.5px;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--cyan);
+  display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;
+}
+.page-eyebrow::before,.page-eyebrow::after{
+  content:"";flex:1;width:28px;height:1px;background:var(--grad);
+}
+.page-title{
+  font-family:var(--font-d);font-weight:700;
+  font-size:clamp(28px,4.5vw,52px);letter-spacing:-0.02em;
+  background:linear-gradient(110deg,#fff 40%,var(--cyan) 70%,var(--accent) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  line-height:1.1;margin-bottom:14px;
+}
+.page-sub{
+  color:var(--muted);font-size:16px;max-width:560px;margin:0 auto;
+}
+
+/* ================================================================
+   MAIN GRID: FORM + OUTPUT
+================================================================ */
+.main-grid{
+  display:grid;
+  grid-template-columns:400px 1fr;
+  gap:28px;
+  align-items:start;
+}
+
+/* ================================================================
+   GLASS CARD
+================================================================ */
+.glass-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  backdrop-filter:blur(20px);
+  padding:28px;
+  transition:border-color 0.35s var(--ease);
+}
+.glass-card:hover{border-color:var(--border-strong);}
+.card-title{
+  font-family:var(--font-d);font-weight:600;font-size:16.5px;
+  margin-bottom:22px;display:flex;align-items:center;gap:10px;
+}
+.card-title-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--grad-soft);
+  border:1px solid rgba(139,108,255,0.3);
+  display:flex;align-items:center;justify-content:center;color:var(--accent);
+}
+
+/* ================================================================
+   FORM ELEMENTS
+================================================================ */
+.form-section{margin-bottom:24px;}
+.form-label{
+  display:block;font-size:12.5px;font-family:var(--font-m);
+  letter-spacing:0.05em;color:var(--muted);margin-bottom:10px;
+}
+.form-input,.form-select{
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);
+  border-radius:10px;font-size:14.5px;color:var(--text);
+  transition:border-color 0.3s ease,background 0.3s ease;
+  outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+.form-input::placeholder{color:var(--faint);}
+.form-input:focus,.form-select:focus{
+  border-color:var(--accent);background:rgba(139,108,255,0.07);
+}
+.form-select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%238b93ab' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+  padding-right:40px;cursor:pointer;
+}
+.form-select option{background:var(--bg-card);}
+
+/* Row of inputs */
+.input-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+.input-row .form-input{flex:1;}
+.input-row .icon-btn{
+  width:38px;height:38px;flex-shrink:0;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);color:var(--muted);
+  transition:all 0.25s ease;
+}
+.input-row .icon-btn:hover{border-color:var(--red);color:var(--red);}
+.add-btn-row{
+  width:100%;padding:10px;border-radius:10px;
+  border:1px dashed var(--border-strong);color:var(--cyan);
+  font-size:13.5px;font-family:var(--font-m);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:all 0.25s ease;margin-top:4px;
+}
+.add-btn-row:hover{background:rgba(34,211,238,0.07);border-color:var(--cyan);}
+
+/* divider */
+.divider{height:1px;background:var(--border);margin:22px 0;}
+
+/* ================================================================
+   GENERATE BUTTON
+================================================================ */
+.generate-btn{
+  width:100%;padding:15px;border-radius:12px;
+  background:var(--grad);color:#080b14;
+  font-size:15px;font-weight:700;font-family:var(--font-d);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:opacity 0.3s ease,transform 0.3s var(--ease),box-shadow 0.3s ease;
+  box-shadow:0 0 0 0 rgba(139,108,255,0.5);
+}
+.generate-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:0 14px 30px -10px rgba(139,108,255,0.5);
+}
+.generate-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+.generate-btn .spinner{
+  width:18px;height:18px;border:2px solid rgba(8,11,20,0.3);
+  border-top-color:#080b14;border-radius:50%;
+  animation:spin 0.7s linear infinite;display:none;
+}
+.generate-btn.loading .spinner{display:block;}
+.generate-btn.loading .btn-label{display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ================================================================
+   OUTPUT PANEL
+================================================================ */
+.output-panel{display:flex;flex-direction:column;gap:20px;}
+
+.output-empty{
+  text-align:center;padding:80px 32px;
+  border:1px dashed var(--border);border-radius:var(--r);
+  color:var(--faint);
+}
+.output-empty svg{margin:0 auto 18px;opacity:0.3;display:block;}
+.output-empty p{font-size:15px;margin-bottom:6px;color:var(--muted);}
+.output-empty span{font-size:13px;font-family:var(--font-m);}
+
+/* ================================================================
+   TIMETABLE WRAPPER
+================================================================ */
+.timetable-wrap{display:none;}
+.timetable-wrap.show{display:block;}
+
+.tt-header{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;margin-bottom:20px;
+}
+.tt-info{}
+.tt-info h2{
+  font-family:var(--font-d);font-weight:700;font-size:19px;
+  margin-bottom:4px;
+}
+.tt-info p{font-family:var(--font-m);font-size:12.5px;color:var(--cyan);}
+
+.tt-actions{display:flex;gap:10px;}
+.tt-btn{
+  padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:7px;
+  transition:all 0.25s ease;
+}
+.tt-btn-print{
+  border:1px solid var(--border-strong);color:var(--text);
+}
+.tt-btn-print:hover{border-color:var(--accent);color:var(--accent);}
+.tt-btn-dl{
+  background:var(--grad);color:#080b14;
+}
+.tt-btn-dl:hover{filter:brightness(1.1);}
+
+/* college header in timetable */
+.tt-college-banner{
+  background:var(--grad-soft);
+  border:1px solid rgba(139,108,255,0.25);
+  border-radius:var(--r);padding:20px 28px;
+  text-align:center;margin-bottom:20px;
+}
+.tt-college-banner h3{
+  font-family:var(--font-d);font-weight:700;font-size:20px;
+  letter-spacing:0.02em;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  margin-bottom:6px;
+}
+.tt-college-banner p{font-family:var(--font-m);font-size:12.5px;color:var(--muted);}
+
+/* ================================================================
+   TIMETABLE TABLE
+================================================================ */
+.table-scroll{overflow-x:auto;border-radius:var(--r);}
+.tt-table{
+  width:100%;border-collapse:collapse;
+  min-width:640px;
+}
+.tt-table thead th{
+  background:linear-gradient(135deg,rgba(139,108,255,0.2),rgba(34,211,238,0.12));
+  padding:14px 16px;
+  text-align:center;
+  font-family:var(--font-d);font-weight:600;font-size:13.5px;
+  border:1px solid var(--border);
+  color:var(--text);
+  white-space:nowrap;
+}
+.tt-table thead th:first-child{
+  text-align:left;min-width:120px;
+  color:var(--cyan);font-family:var(--font-m);font-size:12px;
+}
+.tt-table tbody td{
+  padding:0;border:1px solid var(--border);
+  text-align:center;vertical-align:middle;
+}
+.tt-table tbody td:first-child{
+  padding:12px 16px;
+  font-family:var(--font-m);font-size:12px;color:var(--cyan);
+  white-space:nowrap;background:rgba(139,108,255,0.05);
+  text-align:left;font-weight:600;
+}
+
+/* cell */
+.tt-cell{
+  padding:10px 10px;min-height:64px;height:64px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;transition:background 0.3s ease;
+  position:relative;overflow:hidden;
+}
+.tt-cell.filled{
+  background:rgba(139,108,255,0.1);
+  border-left:3px solid var(--accent);
+  animation:cellReveal 0.5s var(--ease) both;
+}
+.tt-cell.filled:hover{background:rgba(139,108,255,0.18);}
+.tt-cell.break{
+  background:rgba(34,211,238,0.06);
+  border-left:3px solid var(--cyan);
+}
+.tt-cell.free{
+  background:transparent;color:var(--faint);
+  font-size:11px;font-family:var(--font-m);
+}
+@keyframes cellReveal{
+  from{opacity:0;transform:scale(0.88);}
+  to{opacity:1;transform:scale(1);}
+}
+
+.cell-subject{
+  font-family:var(--font-d);font-weight:600;font-size:13px;
+  color:var(--text);line-height:1.2;
+}
+.cell-faculty{
+  font-family:var(--font-m);font-size:10.5px;color:var(--cyan);
+}
+.cell-code{
+  font-family:var(--font-m);font-size:10px;color:var(--accent);opacity:0.8;
+}
+
+/* ================================================================
+   LEGEND
+================================================================ */
+.legend{
+  display:flex;gap:18px;flex-wrap:wrap;
+  padding:16px 20px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;margin-top:16px;
+}
+.legend-item{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;color:var(--muted);font-family:var(--font-m);
+}
+.legend-dot{
+  width:10px;height:10px;border-radius:3px;
+}
+.legend-dot.class{background:var(--accent);}
+.legend-dot.break{background:var(--cyan);}
+.legend-dot.free{background:var(--faint);}
+
+/* ================================================================
+   CONFLICT BADGE / STATS
+================================================================ */
+.stats-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  margin-top:16px;
+}
+.stat-box{
+  padding:16px 18px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;text-align:center;
+}
+.stat-val{
+  font-family:var(--font-d);font-weight:700;font-size:26px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  display:block;
+}
+.stat-lbl{font-size:12px;color:var(--muted);font-family:var(--font-m);}
+
+/* ================================================================
+   SETTINGS ROW
+================================================================ */
+.settings-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+}
+
+/* ================================================================
+   TOAST
+================================================================ */
+.toast{
+  position:fixed;bottom:32px;right:32px;z-index:9999;
+  padding:14px 22px;border-radius:12px;
+  background:var(--bg-card);border:1px solid var(--border-strong);
+  font-size:14px;color:var(--text);
+  box-shadow:0 16px 40px -10px rgba(0,0,0,0.7);
+  transform:translateY(20px);opacity:0;
+  transition:all 0.4s var(--ease);
+  pointer-events:none;
+  display:flex;align-items:center;gap:10px;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:var(--green);color:var(--green);}
+.toast.error{border-color:var(--red);color:var(--red);}
+
+/* ================================================================
+   FOOTER
+================================================================ */
+footer{
+  text-align:center;padding:28px 32px;
+  border-top:1px solid var(--border);
+  color:var(--faint);font-size:13px;font-family:var(--font-m);
+  position:relative;z-index:1;
+}
+
+/* ================================================================
+   PRINT STYLES
+================================================================ */
+@media print{
+  body{background:#fff;color:#111;}
+  .site-header,.generate-btn,.tt-actions,.settings-row,.form-section,
+  .divider,.glass-card,.output-empty,.legend,.stats-row,.page-title-row,
+  #particles,.toast,footer,.card-title-icon,.add-btn-row,.icon-btn,
+  .view-tabs,.regen-btn{display:none!important;}
+  .main-grid{grid-template-columns:1fr!important;}
+  .timetable-wrap{display:block!important;}
+  .tt-college-banner{
+    background:#f5f3ff!important;border:2px solid #8b6cff!important;
+    print-color-adjust:exact;-webkit-print-color-adjust:exact;
+  }
+  .tt-college-banner h3{color:#8b6cff!important;}
+  .tt-table{border-collapse:collapse!important;}
+  .tt-table thead th{background:#f5f3ff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+  .tt-cell.filled{print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+  .tt-table td,.tt-table th{border:1px solid #ccc!important;}
+}
+
+/* ================================================================
+   VIEW TABS
+================================================================ */
+.view-tabs{
+  display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;
+}
+.tab-btn{
+  padding:9px 20px;border-radius:100px;
+  border:1px solid var(--border);color:var(--muted);
+  font-size:13px;font-family:var(--font-m);
+  transition:all 0.25s ease;
+}
+.tab-btn:hover{border-color:var(--border-strong);color:var(--text);}
+.tab-btn.active{background:var(--grad);color:#080b14;border-color:transparent;font-weight:600;}
+
+/* ================================================================
+   SUBJECT COLOR CHIPS
+================================================================ */
+.color-chip{
+  display:inline-block;width:10px;height:10px;border-radius:3px;
+  flex-shrink:0;margin-right:4px;
+}
+
+/* ================================================================
+   CELL EDITABLE OVERLAY
+================================================================ */
+.tt-cell.filled{cursor:pointer;position:relative;}
+.tt-cell.filled:hover::after{
+  content:"✎";
+  position:absolute;top:4px;right:5px;
+  font-size:10px;color:var(--accent);opacity:0.7;
+}
+
+/* EDIT MODAL */
+.modal-backdrop{
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(8,11,20,0.82);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.3s ease;
+}
+.modal-backdrop.show{opacity:1;pointer-events:auto;}
+.modal{
+  background:var(--bg-card);
+  border:1px solid var(--border-strong);
+  border-radius:var(--r);padding:28px;
+  width:min(96vw,420px);
+  transform:scale(0.95) translateY(16px);
+  transition:transform 0.35s var(--ease);
+}
+.modal-backdrop.show .modal{transform:scale(1) translateY(0);}
+.modal h3{font-family:var(--font-d);font-size:17px;margin-bottom:20px;}
+.modal-form{display:flex;flex-direction:column;gap:14px;}
+.modal-actions{display:flex;gap:10px;margin-top:6px;}
+.modal-btn{
+  flex:1;padding:12px;border-radius:10px;
+  font-size:14px;font-weight:600;transition:all 0.25s ease;
+}
+.modal-btn-save{background:var(--grad);color:#080b14;}
+.modal-btn-save:hover{filter:brightness(1.1);}
+.modal-btn-cancel{border:1px solid var(--border-strong);color:var(--text);}
+.modal-btn-cancel:hover{border-color:var(--red);color:var(--red);}
+
+/* ================================================================
+   REGEN + SAVE/LOAD ROW
+================================================================ */
+.action-row{
+  display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;
+}
+.action-row-btn{
+  flex:1;padding:11px 14px;border-radius:10px;
+  border:1px solid var(--border-strong);color:var(--text);
+  font-size:13px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:all 0.25s ease;
+  white-space:nowrap;
+}
+.action-row-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.action-row-btn.save-btn:hover{border-color:var(--green);color:var(--green);}
+
+/* ================================================================
+   SUBJECT SUMMARY TABLE
+================================================================ */
+.subject-summary{
+  margin-top:16px;
+}
+.summary-table{
+  width:100%;border-collapse:collapse;font-size:13.5px;
+}
+.summary-table th{
+  text-align:left;padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  font-family:var(--font-m);font-size:12px;color:var(--muted);
+  font-weight:500;
+}
+.summary-table td{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  color:var(--text);
+}
+.summary-table tr:last-child td{border-bottom:none;}
+.summary-table tbody tr:hover td{background:var(--surface);}
+
+/* ================================================================
+   FACULTY VIEW TABLE
+================================================================ */
+.faculty-section{margin-bottom:28px;}
+.faculty-section h4{
+  font-family:var(--font-d);font-weight:600;font-size:15px;
+  margin-bottom:12px;display:flex;align-items:center;gap:10px;
+}
+.faculty-tag{
+  font-family:var(--font-m);font-size:11.5px;
+  padding:4px 12px;border-radius:100px;
+  background:rgba(139,108,255,0.12);
+  border:1px solid rgba(139,108,255,0.25);
+  color:var(--accent);
+}
+
+/* ================================================================
+   CSV EXPORT BTN
+================================================================ */
+.tt-btn-csv{
+  border:1px solid var(--border-strong);color:var(--text);
+}
+.tt-btn-csv:hover{border-color:var(--green);color:var(--green);}
+
+/* ================================================================
+   LAB PERIOD BADGE
+================================================================ */
+.lab-badge{
+  font-size:9.5px;padding:2px 7px;border-radius:100px;
+  background:rgba(34,211,238,0.15);
+  border:1px solid rgba(34,211,238,0.3);
+  color:var(--cyan);font-family:var(--font-m);
+  display:inline-block;margin-top:2px;
+}
+
+/* ================================================================
+   SUBJECT ROW EXTRAS
+================================================================ */
+.subj-row-extra{
+  display:grid;grid-template-columns:90px 90px 1fr;
+  gap:8px;margin-top:6px;margin-bottom:10px;
+  padding-left:4px;
+}
+.subj-row-extra .form-input{font-size:12.5px;padding:9px 12px;}
+
+/* ================================================================
+   RESPONSIVE
+================================================================ */
+@media(max-width:900px){
+  .main-grid{grid-template-columns:1fr;}
+  .settings-row{grid-template-columns:1fr;}
+  main{padding:32px 20px 60px;}
+  .site-header{padding:0 20px;}
+}
+@media(max-width:600px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .tt-header{flex-direction:column;align-items:flex-start;}
+  .tt-actions{width:100%;flex-wrap:wrap;}
+  .tt-btn{flex:1;justify-content:center;}
+  .college-name{font-size:13px;}
+  .action-row{flex-direction:column;}
+}
+
+/* ================================================================
+   RESPONSIVE
+================================================================ */
+@media(max-width:900px){
+  .main-grid{grid-template-columns:1fr;}
+  .settings-row{grid-template-columns:1fr;}
+  main{padding:32px 20px 60px;}
+  .site-header{padding:0 20px;}
+}
+@media(max-width:600px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .tt-header{flex-direction:column;align-items:flex-start;}
+  .tt-actions{width:100%;}
+  .tt-btn{flex:1;justify-content:center;}
+  .college-name{font-size:13px;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<div class="wrapper">
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="college-brand">
+    <div class="college-logo">SS</div>
+    <div class="college-name">
+      Sree Sakthi Engineering College
+      <span>Department of Information Technology</span>
+    </div>
+  </div>
+  <div class="header-badge">AI Timetable Generator</div>
+</header>
+
+<main>
+
+  <!-- PAGE TITLE -->
+  <div class="page-title-row">
+    <p class="page-eyebrow">Powered by AI Scheduling Logic</p>
+    <h1 class="page-title">AI Timetable Generator</h1>
+    <p class="page-sub">Enter your subjects and faculty details — the AI will auto-generate a conflict-free, optimized weekly timetable instantly.</p>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- ============ LEFT: FORM ============ -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- BASIC INFO -->
+      <div class="glass-card">
+        <h2 class="card-title">
+          <span class="card-title-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 6h16M4 10h16M4 14h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          Basic Information
+        </h2>
+
+        <div class="form-section">
+          <label class="form-label">Department / Class</label>
+          <input class="form-input" id="deptInput" placeholder="e.g. B.Tech IT — II Year A" value="B.Tech Information Technology — II Year A">
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Academic Year</label>
+          <input class="form-input" id="yearInput" placeholder="e.g. 2024 – 2025" value="2024 – 2025">
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Semester</label>
+          <select class="form-select" id="semSelect">
+            <option>Odd Semester (July – November)</option>
+            <option>Even Semester (January – May)</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <div class="form-section" style="margin-bottom:0">
+            <label class="form-label">Working Days</label>
+            <select class="form-select" id="daysSelect">
+              <option value="5">Mon – Fri (5 days)</option>
+              <option value="6" selected>Mon – Sat (6 days)</option>
+            </select>
+          </div>
+          <div class="form-section" style="margin-bottom:0">
+            <label class="form-label">Periods / Day</label>
+            <select class="form-select" id="periodsSelect">
+              <option value="6">6 Periods</option>
+              <option value="7" selected>7 Periods</option>
+              <option value="8">8 Periods</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBJECTS -->
+      <div class="glass-card">
+        <h2 class="card-title">
+          <span class="card-title-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M12 6.25A3.75 3.75 0 1015.75 10 3.75 3.75 0 0012 6.25zm0 9.75c-4.97 0-9 2.02-9 4.5V21h18v-.5c0-2.48-4.03-4.5-9-4.5z" fill="currentColor"/></svg>
+          </span>
+          Subjects &amp; Faculty
+        </h2>
+
+        <div id="subjectsList">
+          <!-- rows added dynamically -->
+        </div>
+
+        <button class="add-btn-row" id="addSubjectBtn" type="button">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Add Subject
+        </button>
+      </div>
+
+      <!-- BREAK SETTINGS -->
+      <div class="glass-card">
+        <h2 class="card-title">
+          <span class="card-title-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          Time &amp; Breaks
+        </h2>
+        <div class="settings-row">
+          <div class="form-section" style="margin-bottom:0">
+            <label class="form-label">Start Time</label>
+            <input class="form-input" id="startTime" type="time" value="08:00">
+          </div>
+          <div class="form-section" style="margin-bottom:0">
+            <label class="form-label">Period Duration</label>
+            <select class="form-select" id="periodDuration">
+              <option value="45">45 min</option>
+              <option value="50" selected>50 min</option>
+              <option value="60">60 min</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-section" style="margin-bottom:0">
+          <label class="form-label">Break After Period</label>
+          <select class="form-select" id="breakAfter">
+            <option value="2">After 2nd period</option>
+            <option value="3" selected>After 3rd period</option>
+            <option value="4">After 4th period</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="generate-btn" id="generateBtn" type="button">
+        <div class="spinner"></div>
+        <span class="btn-label" style="display:flex;align-items:center;gap:9px;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" fill="currentColor"/></svg>
+          Generate Timetable
+        </span>
+      </button>
+
+    </div>
+
+    <!-- ============ RIGHT: OUTPUT ============ -->
+    <div class="output-panel">
+
+      <!-- empty state -->
+      <div class="output-empty" id="outputEmpty">
+        <svg viewBox="0 0 80 80" width="80" height="80" fill="none">
+          <rect x="8" y="8" width="64" height="64" rx="12" stroke="#4e5673" stroke-width="2"/>
+          <path d="M24 32h32M24 40h20M24 48h26" stroke="#4e5673" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="58" cy="24" r="10" fill="#0d1120" stroke="#8b6cff" stroke-width="2"/>
+          <path d="M55 24l2 2 4-4" stroke="#8b6cff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p>Your timetable will appear here</p>
+        <span>Fill in the form and click Generate</span>
+      </div>
+
+      <!-- timetable output -->
+      <div class="timetable-wrap" id="timetableWrap">
+
+        <div class="tt-header">
+          <div class="tt-info">
+            <h2 id="ttTitle">Timetable</h2>
+            <p id="ttMeta"></p>
+          </div>
+          <div class="tt-actions">
+            <button class="tt-btn tt-btn-csv" id="csvBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              CSV
+            </button>
+            <button class="tt-btn tt-btn-print" id="printBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M6 9V3h12v6M6 18H4a1 1 0 01-1-1v-6a1 1 0 011-1h16a1 1 0 011 1v6a1 1 0 01-1 1h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Print
+            </button>
+            <button class="tt-btn tt-btn-dl" id="downloadTTBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Download
+            </button>
+          </div>
+        </div>
+
+        <div class="tt-college-banner">
+          <h3>SREE SAKTHI ENGINEERING COLLEGE</h3>
+          <p id="ttBannerMeta">Department of Information Technology</p>
+        </div>
+
+        <!-- VIEW TABS -->
+        <div class="view-tabs">
+          <button class="tab-btn active" data-tab="weekly">📅 Weekly View</button>
+          <button class="tab-btn" data-tab="faculty">👨‍🏫 Faculty View</button>
+          <button class="tab-btn" data-tab="summary">📊 Subject Summary</button>
+        </div>
+
+        <!-- WEEKLY VIEW -->
+        <div id="tabWeekly">
+          <div class="table-scroll">
+            <table class="tt-table" id="ttTable">
+              <thead id="ttHead"></thead>
+              <tbody id="ttBody"></tbody>
+            </table>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot class"></span> Class Period</div>
+            <div class="legend-item"><span class="legend-dot break"></span> Break</div>
+            <div class="legend-item"><span class="legend-dot free"></span> Free Period</div>
+          </div>
+          <div class="stats-row" id="statsRow"></div>
+          <div class="action-row">
+            <button class="action-row-btn regen-btn" id="regenBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0114.93-3M20 15a8 8 0 01-14.93 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Regenerate
+            </button>
+            <button class="action-row-btn save-btn" id="saveBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Save to Device
+            </button>
+            <button class="action-row-btn" id="loadBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Load Saved
+            </button>
+          </div>
+        </div>
+
+        <!-- FACULTY VIEW -->
+        <div id="tabFaculty" style="display:none;">
+          <div id="facultyViewContent"></div>
+        </div>
+
+        <!-- SUMMARY VIEW -->
+        <div id="tabSummary" style="display:none;">
+          <div class="glass-card subject-summary">
+            <table class="summary-table" id="summaryTable">
+              <thead>
+                <tr>
+                  <th>Color</th>
+                  <th>Subject</th>
+                  <th>Code</th>
+                  <th>Faculty</th>
+                  <th>Room</th>
+                  <th>Periods / Week</th>
+                </tr>
+              </thead>
+              <tbody id="summaryBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  &copy; <span id="yr"></span> Sree Sakthi Engineering College &mdash; AI Timetable Generator &mdash; Built by S. Narmadha Devi
+</footer>
+
+</div><!-- /wrapper -->
+
+<!-- EDIT CELL MODAL -->
+<div class="modal-backdrop" id="editModal">
+  <div class="modal">
+    <h3>✎ Edit Cell</h3>
+    <div class="modal-form">
+      <div>
+        <label class="form-label">Subject Name</label>
+        <input class="form-input" id="editSubjName" placeholder="Subject name">
+      </div>
+      <div>
+        <label class="form-label">Subject Code</label>
+        <input class="form-input" id="editSubjCode" placeholder="e.g. IT301" style="font-family:var(--font-m)">
+      </div>
+      <div>
+        <label class="form-label">Faculty Name</label>
+        <input class="form-input" id="editFacultyName" placeholder="Faculty name">
+      </div>
+      <div>
+        <label class="form-label">Room / Lab</label>
+        <input class="form-input" id="editRoom" placeholder="e.g. Room 204">
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:18px;">
+      <button class="modal-btn modal-btn-save" id="editSaveBtn">Save Changes</button>
+      <button class="modal-btn modal-btn-cancel" id="editCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   PARTICLES
+================================================================ */
+(function(){
+  const canvas=document.getElementById('particles');
+  const ctx=canvas.getContext('2d');
+  let pts=[];
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  function mkPts(){
+    pts=[];const n=window.innerWidth<768?30:60;
+    for(let i=0;i<n;i++) pts.push({
+      x:Math.random()*canvas.width,y:Math.random()*canvas.height,
+      r:Math.random()*1.4+0.3,
+      vx:(Math.random()-0.5)*0.2,vy:(Math.random()-0.5)*0.2,
+      c:Math.random()>0.5?'139,108,255':'34,211,238',
+      a:Math.random()*0.4+0.1
+    });
+  }
+  mkPts();window.addEventListener('resize',mkPts);
+  (function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;
+      if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.c},${p.a})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  })();
+})();
+
+/* ================================================================
+   YEAR
+================================================================ */
+document.getElementById('yr').textContent=new Date().getFullYear();
+
+/* ================================================================
+   SUBJECT COLORS
+================================================================ */
+const COLORS=[
+  '#8b6cff','#22d3ee','#f59e0b','#10b981','#f43f5e',
+  '#6366f1','#0ea5e9','#84cc16','#ec4899','#14b8a6',
+  '#fb923c','#a78bfa','#34d399','#fb7185','#38bdf8'
+];
+function getColor(idx){return COLORS[idx%COLORS.length];}
+
+/* ================================================================
+   TOAST
+================================================================ */
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast show ${type}`;
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+/* ================================================================
+   STATE
+================================================================ */
+let currentGrid=[];
+let currentSlots=[];
+let currentDayLabels=[];
+let currentSubjects=[];
+let currentMeta={};
+
+/* ================================================================
+   SUBJECT ROWS
+================================================================ */
+const subjectsList=document.getElementById('subjectsList');
+
+const defaultSubjects=[
+  {name:'Data Structures',code:'CS201',faculty:'Dr. A. Priya',room:'Room 201',lab:false},
+  {name:'Artificial Intelligence',code:'IT301',faculty:'Prof. R. Kumar',room:'Room 302',lab:false},
+  {name:'Web Technology',code:'IT302',faculty:'Ms. S. Divya',room:'Room 204',lab:false},
+  {name:'Operating Systems',code:'CS303',faculty:'Dr. M. Selvam',room:'Room 103',lab:false},
+  {name:'Database Management',code:'IT304',faculty:'Prof. K. Anand',room:'Room 205',lab:false},
+  {name:'Computer Networks',code:'CS305',faculty:'Ms. P. Lakshmi',room:'Room 301',lab:false},
+];
+
+function createSubjectRow(data={},idx=0){
+  const row=document.createElement('div');
+  row.className='subj-block';
+  row.style.cssText='border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:rgba(255,255,255,0.02);';
+  row.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 70px 1fr 34px;gap:8px;align-items:center;">
+      <input class="form-input subj-name" placeholder="Subject Name" value="${data.name||''}" style="min-width:0;">
+      <input class="form-input subj-code" placeholder="Code" value="${data.code||''}" style="min-width:0;font-family:var(--font-m);font-size:12px;padding:11px 8px;">
+      <input class="form-input subj-faculty" placeholder="Faculty Name" value="${data.faculty||''}" style="min-width:0;">
+      <button class="icon-btn" type="button" title="Remove" onclick="this.closest('.subj-block').remove()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:8px;align-items:center;">
+      <input class="form-input subj-room" placeholder="Room / Lab No." value="${data.room||''}" style="font-size:12.5px;padding:9px 12px;">
+      <select class="form-select subj-type" style="font-size:12.5px;padding:9px 12px;">
+        <option value="theory" ${!data.lab?'selected':''}>Theory</option>
+        <option value="lab" ${data.lab?'selected':''}>Lab (2 periods)</option>
+      </select>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap;">
+        <span class="color-chip" style="background:${getColor(idx)};width:14px;height:14px;border-radius:4px;display:inline-block;"></span>
+        Color ${idx+1}
+      </div>
+    </div>
+  `;
+  return row;
+}
+
+defaultSubjects.forEach((s,i)=>subjectsList.appendChild(createSubjectRow(s,i)));
+
+document.getElementById('addSubjectBtn').addEventListener('click',()=>{
+  const idx=subjectsList.querySelectorAll('.subj-block').length;
+  subjectsList.appendChild(createSubjectRow({},idx));
+  subjectsList.lastElementChild.querySelector('.subj-name').focus();
+});
+
+/* ================================================================
+   TIME SLOT HELPERS
+================================================================ */
+function addMins(t,m){
+  const [h,min]=t.split(':').map(Number);
+  const tot=h*60+min+m;
+  return `${String(Math.floor(tot/60)%24).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;
+}
+function fmt12(t){
+  let [h,m]=t.split(':').map(Number);
+  const ap=h>=12?'PM':'AM';
+  h=h%12||12;
+  return `${h}:${String(m).padStart(2,'0')} ${ap}`;
+}
+function buildSlots(start,count,dur,breakAfter){
+  const s=[];let cur=start;
+  for(let i=1;i<=count;i++){
+    const end=addMins(cur,dur);
+    s.push({label:`${fmt12(cur)}–${fmt12(end)}`,period:i,isBreak:false});
+    cur=end;
+    if(i===breakAfter){
+      const bEnd=addMins(cur,10);
+      s.push({label:`${fmt12(cur)}–${fmt12(bEnd)}`,period:'B',isBreak:true});
+      cur=bEnd;
+    }
+  }
+  return s;
+}
+
+/* ================================================================
+   AI SCHEDULING ALGORITHM
+================================================================ */
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function generateGrid(subjects,days,periods){
+  const total=days*periods;
+  let pool=[];
+  const perSubj=Math.max(1,Math.floor(total/subjects.length));
+  subjects.forEach(s=>{
+    const count=s.isLab?perSubj*2:perSubj;
+    for(let i=0;i<count;i++) pool.push(s);
+  });
+  while(pool.length<total) pool.push(subjects[pool.length%subjects.length]);
+  pool=shuffle(pool.slice(0,total));
+
+  const grid=[];
+  let idx=0;
+  for(let d=0;d<days;d++){
+    const row=[];let prev=null;
+    for(let p=0;p<periods;p++){
+      let tries=0;
+      while(idx<pool.length&&pool[idx]===prev&&tries<6){shuffle(pool);tries++;}
+      row.push(pool[idx]||null);
+      prev=pool[idx];idx++;
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
+/* ================================================================
+   COLLECT FORM DATA
+================================================================ */
+function collectSubjects(){
+  const rows=subjectsList.querySelectorAll('.subj-block');
+  const subjects=[];
+  rows.forEach((row,i)=>{
+    const name=row.querySelector('.subj-name')?.value.trim();
+    const code=row.querySelector('.subj-code')?.value.trim();
+    const faculty=row.querySelector('.subj-faculty')?.value.trim();
+    const room=row.querySelector('.subj-room')?.value.trim()||'—';
+    const isLab=row.querySelector('.subj-type')?.value==='lab';
+    if(name) subjects.push({name,code:code||'---',faculty:faculty||'TBA',room,isLab,color:getColor(i),idx:i});
+  });
+  return subjects;
+}
+
+/* ================================================================
+   RENDER WEEKLY TABLE
+================================================================ */
+function renderTable(grid,subjects,slots,dayLabels){
+  const head=document.getElementById('ttHead');
+  const body=document.getElementById('ttBody');
+  head.innerHTML='';body.innerHTML='';
+
+  // Head
+  const hRow=document.createElement('tr');
+  const th0=document.createElement('th');th0.textContent='Time / Day';hRow.appendChild(th0);
+  dayLabels.forEach(d=>{const th=document.createElement('th');th.textContent=d;hRow.appendChild(th);});
+  head.appendChild(hRow);
+
+  // Body
+  slots.forEach(slot=>{
+    const tr=document.createElement('tr');
+    const tdT=document.createElement('td');tdT.textContent=slot.label;tr.appendChild(tdT);
+
+    if(slot.isBreak){
+      dayLabels.forEach(()=>{
+        const td=document.createElement('td');
+        td.innerHTML=`<div class="tt-cell break"><span class="cell-subject" style="color:var(--cyan);font-size:12px;">☕ Break</span></div>`;
+        tr.appendChild(td);
+      });
+    } else {
+      const pIdx=slot.period-1;
+      grid.forEach((dayRow,dIdx)=>{
+        const td=document.createElement('td');
+        const subj=dayRow[pIdx];
+        if(subj){
+          td.innerHTML=`<div class="tt-cell filled" 
+            data-day="${dIdx}" data-period="${pIdx}"
+            style="border-left:3px solid ${subj.color};animation-delay:${(dIdx+pIdx)*0.04}s"
+            title="Click to edit">
+            <span class="cell-code" style="color:${subj.color}">${subj.code}</span>
+            <span class="cell-subject">${subj.name}</span>
+            <span class="cell-faculty">${subj.faculty}</span>
+            ${subj.isLab?'<span class="lab-badge">LAB</span>':''}
+            <span style="font-size:10px;color:var(--faint);font-family:var(--font-m);">${subj.room}</span>
+          </div>`;
+        } else {
+          td.innerHTML=`<div class="tt-cell free">—</div>`;
+        }
+        tr.appendChild(td);
+      });
+    }
+    body.appendChild(tr);
+  });
+
+  // Attach click-to-edit on cells
+  document.querySelectorAll('.tt-cell.filled').forEach(cell=>{
+    cell.addEventListener('click',()=>openEditModal(
+      parseInt(cell.dataset.day),
+      parseInt(cell.dataset.period)
+    ));
+  });
+}
+
+/* ================================================================
+   RENDER FACULTY VIEW
+================================================================ */
+function renderFacultyView(grid,subjects,slots,dayLabels){
+  const container=document.getElementById('facultyViewContent');
+  container.innerHTML='';
+  const byFaculty={};
+  subjects.forEach(s=>{ byFaculty[s.faculty]=byFaculty[s.faculty]||[]; });
+
+  grid.forEach((dayRow,dIdx)=>{
+    dayRow.forEach((subj,pIdx)=>{
+      if(!subj) return;
+      if(!byFaculty[subj.faculty]) byFaculty[subj.faculty]=[];
+      byFaculty[subj.faculty].push({day:dayLabels[dIdx],slot:slots.find(s=>s.period===pIdx+1),subj});
+    });
+  });
+
+  Object.entries(byFaculty).forEach(([faculty,entries])=>{
+    const sec=document.createElement('div');
+    sec.className='faculty-section glass-card';
+    sec.innerHTML=`<h4><span class="faculty-tag">${faculty}</span></h4>
+      <div class="table-scroll">
+      <table class="summary-table">
+        <thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Code</th><th>Room</th></tr></thead>
+        <tbody>${
+          entries.map(e=>`<tr>
+            <td>${e.day}</td>
+            <td style="font-family:var(--font-m);font-size:12px;">${e.slot?e.slot.label:'—'}</td>
+            <td>${e.subj.name}</td>
+            <td style="font-family:var(--font-m);color:var(--accent);">${e.subj.code}</td>
+            <td style="font-family:var(--font-m);font-size:12px;">${e.subj.room}</td>
+          </tr>`).join('')
+        }</tbody>
+      </table></div>`;
+    container.appendChild(sec);
+  });
+
+  if(Object.keys(byFaculty).length===0){
+    container.innerHTML='<p style="color:var(--muted);padding:20px;">No faculty data available.</p>';
+  }
+}
+
+/* ================================================================
+   RENDER SUMMARY TABLE
+================================================================ */
+function renderSummary(grid,subjects){
+  const body=document.getElementById('summaryBody');
+  body.innerHTML='';
+  subjects.forEach((s,i)=>{
+    const count=grid.reduce((a,row)=>a+row.filter(c=>c&&c.name===s.name).length,0);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><span class="color-chip" style="background:${s.color};width:14px;height:14px;border-radius:4px;display:inline-block;"></span></td>
+      <td style="font-weight:500;">${s.name} ${s.isLab?'<span class="lab-badge">LAB</span>':''}</td>
+      <td style="font-family:var(--font-m);color:var(--accent);">${s.code}</td>
+      <td>${s.faculty}</td>
+      <td style="font-family:var(--font-m);font-size:12px;">${s.room}</td>
+      <td style="text-align:center;font-weight:600;font-family:var(--font-m);">${count}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+/* ================================================================
+   STATS ROW
+================================================================ */
+function renderStats(grid,subjects){
+  const statsRow=document.getElementById('statsRow');
+  const totalClass=grid.reduce((a,row)=>a+row.filter(Boolean).length,0);
+  statsRow.innerHTML=`
+    <div class="stat-box"><span class="stat-val">${totalClass}</span><span class="stat-lbl">Classes / Week</span></div>
+    <div class="stat-box"><span class="stat-val">${subjects.length}</span><span class="stat-lbl">Subjects</span></div>
+    <div class="stat-box"><span class="stat-val" style="color:var(--green)">0</span><span class="stat-lbl">Conflicts</span></div>
+  `;
+}
+
+/* ================================================================
+   META / BANNER
+================================================================ */
+function applyMeta(meta){
+  document.getElementById('ttTitle').textContent=meta.dept||'Weekly Timetable';
+  document.getElementById('ttMeta').textContent=`${meta.year} · ${meta.sem}`;
+  document.getElementById('ttBannerMeta').textContent=`${meta.dept} · ${meta.year} · ${meta.sem}`;
+}
+
+/* ================================================================
+   FULL RENDER PIPELINE
+================================================================ */
+function fullRender(){
+  renderTable(currentGrid,currentSubjects,currentSlots,currentDayLabels);
+  renderFacultyView(currentGrid,currentSubjects,currentSlots,currentDayLabels);
+  renderSummary(currentGrid,currentSubjects);
+  renderStats(currentGrid,currentSubjects);
+  applyMeta(currentMeta);
+}
+
+/* ================================================================
+   GENERATE BUTTON
+================================================================ */
+async function runGenerate(){
+  const subjects=collectSubjects();
+  if(!subjects.length){showToast('Please add at least one subject.','error');return;}
+
+  const btn=document.getElementById('generateBtn');
+  btn.classList.add('loading');btn.disabled=true;
+  await new Promise(r=>setTimeout(r,1100));
+
+  const daysCount=parseInt(document.getElementById('daysSelect').value);
+  const periods=parseInt(document.getElementById('periodsSelect').value);
+  const breakAfter=parseInt(document.getElementById('breakAfter').value);
+  const startTime=document.getElementById('startTime').value||'08:00';
+  const durMin=parseInt(document.getElementById('periodDuration').value);
+
+  currentDayLabels=daysCount===5
+    ?['Monday','Tuesday','Wednesday','Thursday','Friday']
+    :['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  currentSlots=buildSlots(startTime,periods,durMin,breakAfter);
+  currentGrid=generateGrid(subjects,daysCount,periods);
+  currentSubjects=subjects;
+  currentMeta={
+    dept:document.getElementById('deptInput').value.trim()||'Information Technology',
+    year:document.getElementById('yearInput').value.trim()||'2024–2025',
+    sem:document.getElementById('semSelect').value,
+  };
+
+  fullRender();
+
+  document.getElementById('outputEmpty').style.display='none';
+  const wrap=document.getElementById('timetableWrap');
+  wrap.classList.add('show');
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+
+  btn.classList.remove('loading');btn.disabled=false;
+  showToast('✦ Timetable generated — zero conflicts!','success');
+}
+
+document.getElementById('generateBtn').addEventListener('click',runGenerate);
+
+/* ================================================================
+   REGENERATE BUTTON
+================================================================ */
+document.getElementById('regenBtn').addEventListener('click',async ()=>{
+  if(!currentSubjects.length){showToast('Generate a timetable first.','error');return;}
+  const btn=document.getElementById('regenBtn');
+  btn.textContent='Shuffling…';btn.disabled=true;
+  await new Promise(r=>setTimeout(r,700));
+  currentGrid=generateGrid(currentSubjects,currentDayLabels.length,currentSlots.filter(s=>!s.isBreak).length);
+  fullRender();
+  btn.innerHTML=`<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0114.93-3M20 15a8 8 0 01-14.93 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Regenerate`;
+  btn.disabled=false;
+  showToast('Shuffled with new arrangement!','success');
+});
+
+/* ================================================================
+   SAVE / LOAD (localStorage)
+================================================================ */
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  if(!currentSubjects.length){showToast('Nothing to save yet.','error');return;}
+  try{
+    localStorage.setItem('snd_tt_grid',JSON.stringify(currentGrid));
+    localStorage.setItem('snd_tt_subjects',JSON.stringify(currentSubjects));
+    localStorage.setItem('snd_tt_slots',JSON.stringify(currentSlots));
+    localStorage.setItem('snd_tt_days',JSON.stringify(currentDayLabels));
+    localStorage.setItem('snd_tt_meta',JSON.stringify(currentMeta));
+    showToast('Timetable saved to this device!','success');
+  } catch(e){showToast('Could not save — storage unavailable.','error');}
+});
+
+document.getElementById('loadBtn').addEventListener('click',()=>{
+  try{
+    const g=localStorage.getItem('snd_tt_grid');
+    const s=localStorage.getItem('snd_tt_subjects');
+    const sl=localStorage.getItem('snd_tt_slots');
+    const d=localStorage.getItem('snd_tt_days');
+    const m=localStorage.getItem('snd_tt_meta');
+    if(!g){showToast('No saved timetable found.','error');return;}
+    currentGrid=JSON.parse(g);
+    currentSubjects=JSON.parse(s);
+    currentSlots=JSON.parse(sl);
+    currentDayLabels=JSON.parse(d);
+    currentMeta=JSON.parse(m);
+    fullRender();
+    document.getElementById('outputEmpty').style.display='none';
+    document.getElementById('timetableWrap').classList.add('show');
+    showToast('Saved timetable loaded!','success');
+  } catch(e){showToast('Could not load saved data.','error');}
+});
+
+/* ================================================================
+   VIEW TABS
+================================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab=btn.dataset.tab;
+    document.getElementById('tabWeekly').style.display=tab==='weekly'?'block':'none';
+    document.getElementById('tabFaculty').style.display=tab==='faculty'?'block':'none';
+    document.getElementById('tabSummary').style.display=tab==='summary'?'block':'none';
+  });
+});
+
+/* ================================================================
+   EDIT CELL MODAL
+================================================================ */
+let editTarget={day:null,period:null};
+
+function openEditModal(day,period){
+  const subj=currentGrid[day]?.[period];
+  if(!subj) return;
+  editTarget={day,period};
+  document.getElementById('editSubjName').value=subj.name||'';
+  document.getElementById('editSubjCode').value=subj.code||'';
+  document.getElementById('editFacultyName').value=subj.faculty||'';
+  document.getElementById('editRoom').value=subj.room||'';
+  document.getElementById('editModal').classList.add('show');
+}
+
+document.getElementById('editSaveBtn').addEventListener('click',()=>{
+  const {day,period}=editTarget;
+  if(day===null) return;
+  const subj=currentGrid[day][period];
+  if(!subj) return;
+  subj.name=document.getElementById('editSubjName').value.trim()||subj.name;
+  subj.code=document.getElementById('editSubjCode').value.trim()||subj.code;
+  subj.faculty=document.getElementById('editFacultyName').value.trim()||subj.faculty;
+  subj.room=document.getElementById('editRoom').value.trim()||subj.room;
+  fullRender();
+  document.getElementById('editModal').classList.remove('show');
+  showToast('Cell updated!','success');
+});
+
+document.getElementById('editCancelBtn').addEventListener('click',()=>{
+  document.getElementById('editModal').classList.remove('show');
+});
+document.getElementById('editModal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('editModal'))
+    document.getElementById('editModal').classList.remove('show');
+});
+
+/* ================================================================
+   PRINT
+================================================================ */
+document.getElementById('printBtn').addEventListener('click',()=>window.print());
+
+/* ================================================================
+   CSV EXPORT
+================================================================ */
+document.getElementById('csvBtn').addEventListener('click',()=>{
+  if(!currentSubjects.length){showToast('Generate a timetable first.','error');return;}
+  const classSlots=currentSlots.filter(s=>!s.isBreak);
+  let csv='Time/Day,'+currentDayLabels.join(',')+'\n';
+  classSlots.forEach(slot=>{
+    const pIdx=slot.period-1;
+    let row=`"${slot.label}"`;
+    currentGrid.forEach(dayRow=>{
+      const s=dayRow[pIdx];
+      row+=s?`,"${s.name} (${s.faculty})"`:',—';
+    });
+    csv+=row+'\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='timetable-ssec.csv';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('CSV downloaded!','success');
+});
+
+/* ================================================================
+   DOWNLOAD HTML
+================================================================ */
+document.getElementById('downloadTTBtn').addEventListener('click',()=>{
+  if(!currentSubjects.length){showToast('Generate a timetable first.','error');return;}
+  const dept=currentMeta.dept||'IT';
+  const year=currentMeta.year||'2024-25';
+  const sem=currentMeta.sem||'';
+  const table=document.getElementById('ttTable').outerHTML;
+
+  const html=`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Timetable — Sree Sakthi Engineering College</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:32px;}
+.header{text-align:center;margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid #8b6cff;}
+.header h1{font-size:20px;color:#8b6cff;letter-spacing:0.04em;margin-bottom:5px;}
+.header p{font-size:13px;color:#555;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{background:#f5f3ff;padding:11px 10px;border:1px solid #d4c8ff;text-align:center;font-weight:700;color:#4c1d95;}
+thead th:first-child{text-align:left;}
+td{border:1px solid #e5e7eb;padding:0;vertical-align:middle;text-align:center;}
+td:first-child{padding:10px 12px;font-size:11.5px;color:#8b6cff;font-weight:700;text-align:left;background:#faf8ff;}
+.tt-cell{padding:8px 6px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.tt-cell.filled{background:#f5f3ff;}
+.tt-cell.break{background:#f0fdfa;}
+.tt-cell.free{color:#aaa;font-size:11px;}
+.cell-subject{font-weight:700;font-size:12px;color:#1e1b4b;}
+.cell-faculty{font-size:10.5px;color:#6366f1;}
+.cell-code{font-size:10px;color:#8b6cff;font-weight:500;}
+.lab-badge{font-size:9px;padding:1px 6px;border-radius:4px;background:#ccfbf1;color:#0d9488;font-weight:700;}
+.footer{margin-top:24px;text-align:center;font-size:12px;color:#9ca3af;}
+print-color-adjust:exact;-webkit-print-color-adjust:exact;
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>SREE SAKTHI ENGINEERING COLLEGE</h1>
+  <p>${dept} &mdash; ${year} &mdash; ${sem}</p>
+</div>
+${table}
+<div class="footer">Generated by AI Timetable Generator &mdash; Dept. of IT, Sree Sakthi Engineering College</div>
+</body>
+</html>`;
+
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`timetable-${dept.replace(/\s+/g,'-')}-${year}.html`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('HTML file downloaded!','success');
+});
+</script>
+</body>
+</html>
